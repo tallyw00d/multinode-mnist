@@ -30,9 +30,9 @@ def parse_args():
                         help='Task type for the node in the distributed cluster. Worker-0 will be set as master.')
     parser.add_argument('--task_index', type=int, default=os.environ.get('TASK_INDEX', 0),
                         help='Worker task index, should be >= 0. task_index=0 is the chief worker.')
-    parser.add_argument('--ps_hosts', type=str, default=os.environ.get('PS_HOSTS', ''),
+    parser.add_argument('--ps_hosts', type=str, default=os.environ.get('PS_HOSTS'),
                         help='Comma-separated list of hostname:port pairs.')
-    parser.add_argument('--worker_hosts', type=str, default=os.environ.get('WORKER_HOSTS', ''),
+    parser.add_argument('--worker_hosts', type=str, default=os.environ.get('WORKER_HOSTS'),
                         help='Comma-separated list of hostname:port pairs.')
 
     # Experiment related parameters
@@ -59,7 +59,7 @@ def parse_args():
                         help='Batch size to use during training and evaluation.')
 
     # Training params
-    parser.add_argument('--verbosity', type=str, default='INFO', choices=['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'],
+    parser.add_argument('--verbosity', type=str, default='DEBUG', choices=['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'],
                         help='TF logging level. To see intermediate results printed, set this to INFO or DEBUG.')
     parser.add_argument('--fashion', action='store_true',
                         help='Download and use fashion MNIST data instead of the default handwritten digit MNIST.')
