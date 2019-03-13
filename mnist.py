@@ -88,14 +88,14 @@ def parse_args():
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
     if opts.worker_hosts:
-        opts.worker_hosts = opts.worker_hosts.replace('[').replace(']').split(',')
+        opts.worker_hosts = opts.worker_hosts.replace('[', '').replace(']', '').split(',')
     else:
         opts.worker_hosts = []
 
-    opts.master = opts.master.replace('[').replace(']').split(',')
+    opts.master = opts.master.replace('[', '').replace(']', '').split(',')
 
     if opts.ps_hosts:
-        opts.ps_hosts = opts.ps_hosts.replace('[').replace(']').split(',')
+        opts.ps_hosts = opts.ps_hosts.replace('[', '').replace(']', '').split(',')
     else:
         opts.ps_hosts = []
 
