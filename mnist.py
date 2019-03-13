@@ -4,9 +4,11 @@
 
 from __future__ import print_function
 
+import base64
 import json
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from pprint import pprint
 
 import tensorflow as tf
 
@@ -86,12 +88,14 @@ def parse_args():
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
     if opts.worker_hosts:
-        opts.worker_hosts = opts.worker_hosts.split(',')
+        opts.worker_hosts = opts.worker_hosts.replace('[').replace(']').split(',')
     else:
-        opts.master = opts.master.split(',')
+        opts.worker_hosts = []
+
+    opts.master = opts.master.replace('[').replace(']').split(',')
 
     if opts.ps_hosts:
-        opts.ps_hosts = opts.ps_hosts.split(',')
+        opts.ps_hosts = opts.ps_hosts.replace('[').replace(']').split(',')
     else:
         opts.ps_hosts = []
 
@@ -232,6 +236,9 @@ if __name__ == "__main__":
     for k, v in sorted(args.__dict__.items()):
         if v is not None:
             tf.logging.debug('{}: {}'.format(k, v))
+
+    paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG'))
+    pprint(paperspace_tf_config)
 
     TF_CONFIG = make_tf_config(args)
     tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
