@@ -133,7 +133,7 @@ def make_tf_config(opts):
     }
 
     # Nodes may need to refer to itself as localhost
-    local_ip = 'localhost:' + tf_config['cluster'][opts.job_name][opts.task_index].split(':')[1]
+    local_ip = 'localhost:' + os.environ.get('PORTS')
     tf_config['cluster'][opts.job_name][opts.task_index] = local_ip
     if opts.job_name == 'worker' and opts.task_index == 0:
         tf_config['task']['type'] = 'master'
@@ -237,7 +237,7 @@ if __name__ == "__main__":
         if v is not None:
             tf.logging.debug('{}: {}'.format(k, v))
 
-    paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG'))
+    paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
     pprint(paperspace_tf_config)
 
     TF_CONFIG = make_tf_config(args)
