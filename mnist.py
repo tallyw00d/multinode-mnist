@@ -26,13 +26,15 @@ def parse_args():
                             If these are not set, the script will run in non-distributed (single instance) mode.''')
 
     # Configuration for distributed task
-    parser.add_argument('--job_name', type=str, default=os.environ.get('JOB_NAME', None), choices=['worker', 'ps'],
+    parser.add_argument('--job_name', type=str, default=os.environ.get('TYPE', None), choices=['worker', 'ps', 'master'],
                         help='Task type for the node in the distributed cluster. Worker-0 will be set as master.')
-    parser.add_argument('--task_index', type=int, default=os.environ.get('TASK_INDEX', 0),
+    parser.add_argument('--task_index', type=int, default=os.environ.get('INDEX', 0),
                         help='Worker task index, should be >= 0. task_index=0 is the chief worker.')
     parser.add_argument('--ps_hosts', type=str, default=os.environ.get('PS_HOSTS'),
                         help='Comma-separated list of hostname:port pairs.')
     parser.add_argument('--worker_hosts', type=str, default=os.environ.get('WORKER_HOSTS'),
+                        help='Comma-separated list of hostname:port pairs.')
+    parser.add_argument('--master', type=str, default=os.environ.get('MASTER'),
                         help='Comma-separated list of hostname:port pairs.')
 
     # Experiment related parameters
@@ -86,7 +88,7 @@ def parse_args():
     if opts.worker_hosts:
         opts.worker_hosts = opts.worker_hosts.split(',')
     else:
-        opts.worker_hosts = []
+        opts.master = opts.master.split(',')
 
     if opts.ps_hosts:
         opts.ps_hosts = opts.ps_hosts.split(',')
@@ -119,7 +121,7 @@ def make_tf_config(opts):
             'index': opts.task_index
         },
         'cluster': {
-            'master': [opts.worker_hosts[0]],
+            'master': opts.master,
             'worker': opts.worker_hosts,
             'ps': opts.ps_hosts
         },
