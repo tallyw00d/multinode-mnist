@@ -163,6 +163,8 @@ def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
     workers = paperspace_tf_config['cluster']['worker']
 
     paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in master_nodes]
+    if paperspace_tf_config['environment'] == 'paperspace':
+        paperspace_tf_config['environment'] = 'cloud'
     tf.logging.debug(str(paperspace_tf_config))
     return paperspace_tf_config
 
