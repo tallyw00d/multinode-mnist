@@ -8,11 +8,9 @@ import base64
 import json
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from pprint import pprint
 
 import tensorflow as tf
 from tensorflow.python.training import server_lib
-from tensorflow_estimator.python.estimator.run_config import RunConfig
 
 from utils import train_dataset, test_dataset
 
