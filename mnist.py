@@ -92,7 +92,9 @@ def parse_args():
     else:
         opts.worker_hosts = []
 
-    opts.master = opts.master.replace('[', '').replace(']', '').split(',')
+    if opts.master:
+        opts.master = opts.master.replace('[', '').replace(']', '').split(',')
+        opts.worker_hosts.append(opts.master)
 
     if opts.ps_hosts:
         opts.ps_hosts = opts.ps_hosts.replace('[', '').replace(']', '').split(',')
@@ -119,6 +121,8 @@ def make_tf_config(opts):
         tf.logging.warn('Ignoring distributed arguments. Running single mode.')
         return {}
 
+    opts.worker_hosts = opts.worker_hosts.append(opts.master)
+
     tf_config = {
         'task': {
             'type': opts.job_name,
@@ -135,7 +139,7 @@ def make_tf_config(opts):
     # Nodes may need to refer to itself as localhost
     local_ip = 'localhost:' + os.environ.get('PORTS')
     tf_config['cluster'][opts.job_name][opts.task_index] = local_ip
-    if opts.job_name == 'worker' and opts.task_index == 0:
+    if opts.job_name == 'master':
         tf_config['task']['type'] = 'master'
         tf_config['cluster']['master'][0] = local_ip
     return tf_config
@@ -237,8 +241,9 @@ if __name__ == "__main__":
         if v is not None:
             tf.logging.debug('{}: {}'.format(k, v))
 
-    paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
-    pprint(paperspace_tf_config)
+    if os.environ.get('TF_CONFIG'):
+        paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
+        pprint(paperspace_tf_config)
 
     TF_CONFIG = make_tf_config(args)
     tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
