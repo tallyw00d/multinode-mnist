@@ -160,6 +160,10 @@ def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
         paperspace_tf_config['task']['type'] = 'chief'
     paperspace_tf_config['cluster']['chief'] = paperspace_tf_config['cluster']['master']
     paperspace_tf_config['cluster'].pop('master')
+    cheif_nodes =  paperspace_tf_config['cluster']['chief']
+    workers = paperspace_tf_config['cluster']['worker']
+
+    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in cheif_nodes]
     tf.logging.debug(str(paperspace_tf_config))
     return paperspace_tf_config
 
