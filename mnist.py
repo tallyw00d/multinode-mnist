@@ -146,7 +146,7 @@ def check_worker_nodes(config):
 def check_clusterspec(config):
     tf_config = json.loads(os.environ['TF_CONFIG'])
     assert config.num_ps_replicas == len(tf_config['cluster']['ps'])
-    assert config.num_worker_replicas == len(tf_config['cluster']['worker']) + len(tf_config['cluster']['chief'])
+    assert config.num_worker_replicas == len(tf_config['cluster']['worker']) + len(tf_config['cluster']['master'])
     assert config.cluster_spec == server_lib.ClusterSpec(tf_config['cluster'])
 
 
@@ -157,16 +157,12 @@ def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
 
     paperspace_tf_config = json.loads(base64.urlsafe_b64decode(tf_config).decode('utf-8'))
 
-    if args.job_name == 'master':
-        paperspace_tf_config['task']['type'] = 'chief'
     if paperspace_tf_config['task']['type'] == 'worker':
         paperspace_tf_config['task']['index'] = paperspace_tf_config['task']['index'] - 1
-    paperspace_tf_config['cluster']['chief'] = paperspace_tf_config['cluster']['master']
-    paperspace_tf_config['cluster'].pop('master')
-    chief_nodes = paperspace_tf_config['cluster']['chief']
+    master_nodes = paperspace_tf_config['cluster']['master']
     workers = paperspace_tf_config['cluster']['worker']
 
-    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in chief_nodes]
+    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in master_nodes]
     tf.logging.debug(str(paperspace_tf_config))
     return paperspace_tf_config
 
@@ -178,7 +174,7 @@ def get_input_fn(opts, is_train=True):
         with tf.device('/cpu:0'):
             if is_train:
                 dataset = train_dataset(opts.data_dir, fashion=opts.fashion)
-                dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=5 * opts.batch_size, count=None))
+                dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=5 * opts.batch_size, count=None))
             else:
                 dataset = test_dataset(opts.data_dir, fashion=opts.fashion)
             dataset = dataset.batch(batch_size=opts.batch_size)
@@ -234,10 +230,8 @@ def main(opts):
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
         log_step_count_steps=opts.log_step_count_steps)
-    estimator = tf.estimator.Estimator(
-        model_fn=get_model_fn(opts),
-        config=config)
 
+    # CHECK CONFIG
     check_clusterspec(config)
     type = os.environ.get('TYPE')
     if type in ('chief','master'):
@@ -246,6 +240,10 @@ def main(opts):
         check_worker_nodes(config)
     elif type == 'ps':
         check_ps_nodes(config)
+
+    estimator = tf.estimator.Estimator(
+        model_fn=get_model_fn(opts),
+        config=config)
 
     # Create input fn
     # We do not provide evaluation data, so we'll just use training data for both train & evaluation.
