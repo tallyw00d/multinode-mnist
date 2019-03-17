@@ -104,10 +104,9 @@ def parse_args():
     return opts
 
 
-def make_tf_config(opts):
-    """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
+def check_tf_config_for_distributed(opts):
     if all([opts.job_name is None, not opts.ps_hosts, not opts.worker_hosts]):
-        return {}
+        return False
     elif any([opts.job_name is None, not opts.ps_hosts, not opts.worker_hosts]):
         tf.logging.warn('Distributed setting is incomplete. You must pass job_name, ps_hosts, and worker_hosts.')
         if opts.job_name is None:
@@ -119,9 +118,14 @@ def make_tf_config(opts):
             tf.logging.warn('Expected worker_hosts, list of hostname:port pairs. Got {}. '.format(opts.worker_hosts) +
                             'Example: --worker_hosts "localhost:2222,localhost:2223"')
         tf.logging.warn('Ignoring distributed arguments. Running single mode.')
-        return {}
+        return False
+    return True
 
-    opts.worker_hosts = opts.worker_hosts.append(opts.master)
+
+def make_tf_config(opts):
+    """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
+    if not check_tf_config_for_distributed(opts):
+        return {}
 
     tf_config = {
         'task': {
@@ -143,6 +147,21 @@ def make_tf_config(opts):
         tf_config['task']['type'] = 'master'
         tf_config['cluster']['master'][0] = local_ip
     return tf_config
+
+
+def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
+
+    if not tf_config:
+        return
+
+    paperspace_tf_config = json.loads(base64.urlsafe_b64decode(tf_config).decode('utf-8'))
+
+    if args.job_name == 'master':
+        paperspace_tf_config['task']['type'] = 'chief'
+    paperspace_tf_config['cluster']['chief'] = paperspace_tf_config['cluster']['master']
+    paperspace_tf_config['cluster'].pop('master')
+    tf.logging.debug(str(paperspace_tf_config))
+    return paperspace_tf_config
 
 
 def get_input_fn(opts, is_train=True):
@@ -241,17 +260,9 @@ if __name__ == "__main__":
         if v is not None:
             tf.logging.debug('{}: {}'.format(k, v))
 
-    if os.environ.get('TF_CONFIG'):
-
-        paperspace_tf_config = base64.urlsafe_b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
-        pprint(paperspace_tf_config)
-        os.environ['TF_CONFIG'] = paperspace_tf_config
-
-    else:
-        TF_CONFIG = make_tf_config(args)
-        tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
-        tf.logging.debug(TF_CONFIG)
-        os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
+    tf_config = get_paperspace_tf_config(args)
+    if tf_config:
+        os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     main(args)
