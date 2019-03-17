@@ -158,6 +158,8 @@ def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
 
     if args.job_name == 'master':
         paperspace_tf_config['task']['type'] = 'chief'
+    if paperspace_tf_config['task']['type'] == 'worker':
+        paperspace_tf_config['task']['index'] = paperspace_tf_config['task']['index'] - 1
     paperspace_tf_config['cluster']['chief'] = paperspace_tf_config['cluster']['master']
     paperspace_tf_config['cluster'].pop('master')
     cheif_nodes =  paperspace_tf_config['cluster']['chief']
