@@ -129,10 +129,10 @@ def check_ps_nodes(config):
     assert not config.is_chief
 
 
-def check_chief_nodes(config):
+def check_master_nodes(config):
     tf_config = json.loads(os.environ['TF_CONFIG'])
     assert config.task_id == tf_config['task']['index']
-    assert config.task_type == 'chief'
+    assert config.task_type == 'master'
     assert config.is_chief
 
 
@@ -235,7 +235,7 @@ def main(opts):
     check_clusterspec(config)
     type = os.environ.get('TYPE')
     if type in ('chief','master'):
-        check_chief_nodes(config)
+        check_master_nodes(config)
     elif type == 'worker':
         check_worker_nodes(config)
     elif type == 'ps':
