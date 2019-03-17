@@ -3,7 +3,7 @@
 # Author: Michal Kulaczkowski
 
 from __future__ import print_function
-
+from pathlib import Path
 import base64
 import json
 import os
@@ -82,8 +82,8 @@ def parse_args():
 
     # Parse args
     opts = parser.parse_args()
-    opts.data_dir = os.path.abspath(os.environ.get('PS_HOME', '/paperspace') + '/data')
-    opts.log_dir = os.path.abspath(os.environ.get('PS_HOME', '/paperspace') + '/logs')
+    opts.data_dir = os.path.abspath(os.environ.get('PS_HOME', os.getcwd()) + '/data')
+    opts.log_dir = os.path.abspath(os.environ.get('PS_HOME', os.getcwd()) + '/logs')
 
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
@@ -100,6 +100,22 @@ def parse_args():
         opts.ps_hosts = opts.ps_hosts.replace('[', '').replace(']', '').split(',')
     else:
         opts.ps_hosts = []
+
+    log_type_path = opts.log_dir + '/' + os.environ.get('TYPE')
+    try:
+        Path(log_type_path).touch(exist_ok=True)
+        # print storage options:
+        files = os.listdir(opts.data_dir)
+        print('DATA DIR')
+        for name in files:
+            print(name)
+
+        files = os.listdir(opts.log_dir)
+        print('LOG DIR')
+        for name in files:
+            print(name)
+    except FileNotFoundError as e:
+        print(str(e))
 
     return opts
 
