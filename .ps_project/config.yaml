@@ -1,17 +1,13 @@
 version: 0
 
 type: "multi-grpc"
-ports: "5000"
-paths:
-  workdir: "/home/playground"
-  artifacts: "/var/ml/artifacts"
 worker:
-  container: "tensorflow/tensorflow:1.8.0-gpu"
-  command: "nvidia-smi"
+  container: "tensorflow/tensorflow:1.12.0-gpu-py3"
+  command: "python mnist.py"
   machine-type: "K80"
-  count: 1
+  count: 3
 parameter-server:
-  container: "tensorflow/tensorflow:1.8.0-gpu"
-  command: "nvidia-smi"
+  container: "tensorflow/tensorflow:1.12.0-gpu-py3"
+  command: "python mnist.py"
   machine-type: "K80"
   count: 1
