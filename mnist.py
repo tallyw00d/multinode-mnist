@@ -242,13 +242,16 @@ if __name__ == "__main__":
             tf.logging.debug('{}: {}'.format(k, v))
 
     if os.environ.get('TF_CONFIG'):
-        paperspace_tf_config = base64.b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
-        pprint(paperspace_tf_config)
 
-    TF_CONFIG = make_tf_config(args)
-    tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
-    tf.logging.debug(TF_CONFIG)
-    os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
+        paperspace_tf_config = base64.urlsafe_b64decode(os.environ.get('TF_CONFIG')).decode('utf-8')
+        pprint(paperspace_tf_config)
+        os.environ['TF_CONFIG'] = paperspace_tf_config
+
+    else:
+        TF_CONFIG = make_tf_config(args)
+        tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
+        tf.logging.debug(TF_CONFIG)
+        os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
 
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     main(args)
