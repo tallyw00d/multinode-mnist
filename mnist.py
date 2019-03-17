@@ -40,9 +40,9 @@ def parse_args():
                         help='Comma-separated list of hostname:port pairs.')
 
     # Experiment related parameters
-    parser.add_argument('--local_data_root', type=str, default=os.path.abspath('./data/'),
+    parser.add_argument('--local_data_root', type=str, default=os.path.abspath(os.getenv('PS_HOME', os.getcwd()) + '/data'),
                         help='Path to dataset. This path will be /data on Paperspace.')
-    parser.add_argument('--local_log_root', type=str, default=os.path.abspath('./artifacts/'),
+    parser.add_argument('--local_log_root', type=str, default=os.path.abspath(os.getenv('PS_HOME', os.getcwd()) + '/logs'),
                         help='Path to store logs and checkpoints. This path will be /artifacts on Paperspace.')
     parser.add_argument('--data_subpath', type=str, default='',
                         help='Which sub-directory the data will sit inside local_data_root (locally) ' +
@@ -82,8 +82,8 @@ def parse_args():
 
     # Parse args
     opts = parser.parse_args()
-    opts.data_dir = os.path.abspath(os.environ.get('DATA_DIR', './data/'))
-    opts.log_dir = os.path.abspath(os.environ.get('LOG_DIR', './data/'))
+    opts.data_dir = os.path.abspath(os.environ.get('PS_HOME', '/paperspace') + '/data')
+    opts.log_dir = os.path.abspath(os.environ.get('PS_HOME', '/paperspace') + '/logs')
 
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
