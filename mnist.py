@@ -42,8 +42,8 @@ def parse_args():
     # Experiment related parameters
     parser.add_argument('--local_data_root', type=str, default=os.path.abspath('./data/'),
                         help='Path to dataset. This path will be /data on Paperspace.')
-    parser.add_argument('--local_log_root', type=str, default=os.path.abspath('./logs/'),
-                        help='Path to store logs and checkpoints. This path will be /logs on Paperspace.')
+    parser.add_argument('--local_log_root', type=str, default=os.path.abspath('./artifacts/'),
+                        help='Path to store logs and checkpoints. This path will be /artifacts on Paperspace.')
     parser.add_argument('--data_subpath', type=str, default='',
                         help='Which sub-directory the data will sit inside local_data_root (locally) ' +
                              'or /data/ (on Paperspace).')
