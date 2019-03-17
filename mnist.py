@@ -11,6 +11,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pprint import pprint
 
 import tensorflow as tf
+from tensorflow.python.training import server_lib
+from tensorflow_estimator.python.estimator.run_config import RunConfig
 
 from utils import train_dataset, test_dataset
 
@@ -122,31 +124,32 @@ def check_tf_config_for_distributed(opts):
     return True
 
 
-def make_tf_config(opts):
-    """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
-    if not check_tf_config_for_distributed(opts):
-        return {}
+def check_ps_nodes(config):
+    tf_config = json.loads(os.environ['TF_CONFIG'])
+    assert config.task_id == tf_config['task']['index']
+    assert config.task_type == 'ps'
+    assert not config.is_chief
 
-    tf_config = {
-        'task': {
-            'type': opts.job_name,
-            'index': opts.task_index
-        },
-        'cluster': {
-            'master': opts.master,
-            'worker': opts.worker_hosts,
-            'ps': opts.ps_hosts
-        },
-        'environment': 'cloud'
-    }
 
-    # Nodes may need to refer to itself as localhost
-    local_ip = 'localhost:' + os.environ.get('PORTS')
-    tf_config['cluster'][opts.job_name][opts.task_index] = local_ip
-    if opts.job_name == 'master':
-        tf_config['task']['type'] = 'master'
-        tf_config['cluster']['master'][0] = local_ip
-    return tf_config
+def check_chief_nodes(config):
+    tf_config = json.loads(os.environ['TF_CONFIG'])
+    assert config.task_id == tf_config['task']['index']
+    assert config.task_type == 'chief'
+    assert config.is_chief
+
+
+def check_worker_nodes(config):
+    tf_config = json.loads(os.environ['TF_CONFIG'])
+    assert config.task_id == tf_config['task']['index']
+    assert config.task_type == 'worker'
+    assert not config.is_chief
+
+
+def check_clusterspec(config):
+    tf_config = json.loads(os.environ['TF_CONFIG'])
+    assert config.num_ps_replicas == len(tf_config['cluster']['ps'])
+    assert config.num_worker_replicas == len(tf_config['cluster']['worker']) + len(tf_config['cluster']['chief'])
+    assert config.cluster_spec == server_lib.ClusterSpec(tf_config['cluster'])
 
 
 def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
@@ -162,10 +165,10 @@ def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
         paperspace_tf_config['task']['index'] = paperspace_tf_config['task']['index'] - 1
     paperspace_tf_config['cluster']['chief'] = paperspace_tf_config['cluster']['master']
     paperspace_tf_config['cluster'].pop('master')
-    cheif_nodes =  paperspace_tf_config['cluster']['chief']
+    chief_nodes = paperspace_tf_config['cluster']['chief']
     workers = paperspace_tf_config['cluster']['worker']
 
-    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in cheif_nodes]
+    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in chief_nodes]
     tf.logging.debug(str(paperspace_tf_config))
     return paperspace_tf_config
 
@@ -236,6 +239,15 @@ def main(opts):
     estimator = tf.estimator.Estimator(
         model_fn=get_model_fn(opts),
         config=config)
+
+    check_clusterspec(config)
+    type = os.environ.get('TYPE')
+    if type in ('chief','master'):
+        check_chief_nodes(config)
+    elif type == 'worker':
+        check_worker_nodes(config)
+    elif type == 'ps':
+        check_ps_nodes(config)
 
     # Create input fn
     # We do not provide evaluation data, so we'll just use training data for both train & evaluation.
