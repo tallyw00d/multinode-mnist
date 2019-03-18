@@ -111,9 +111,18 @@ def parse_args():
     return opts
 
 
+def get_tf_config():
+    tf_config = json.loads(os.getenv('TF_CONFIG', "{}"))
+    if not tf_config:
+        return
+    return tf_config
+
+
 def network_check():
-    tf_config = json.loads(os.environ['TF_CONFIG'])
     tf.logging.info('************NETWORK CHECK*******************')
+    tf_config = get_tf_config()
+    if not tf_config:
+        return
 
     for ip in tf_config['cluster']['worker']:
         if ping(str(ip)):
@@ -132,38 +141,45 @@ def network_check():
             tf.logging.warning('PINGING: {} - FAILED'.format(ip))
 
 def check_ps_nodes(config):
-    tf_config = json.loads(os.environ['TF_CONFIG'])
+    tf_config = get_tf_config()
+    if not tf_config:
+        return
     assert config.task_id == tf_config['task']['index']
     assert config.task_type == 'ps'
     assert not config.is_chief
 
 
 def check_master_nodes(config):
-    tf_config = json.loads(os.environ['TF_CONFIG'])
+    tf_config = get_tf_config()
+    if not tf_config:
+        return
     assert config.task_id == tf_config['task']['index']
     assert config.task_type == 'master'
     assert config.is_chief
 
 
 def check_worker_nodes(config):
-    tf_config = json.loads(os.environ['TF_CONFIG'])
+    tf_config = get_tf_config()
+    if not tf_config:
+        return
     assert config.task_id == tf_config['task']['index']
     assert config.task_type == 'worker'
     assert not config.is_chief
 
 
 def check_clusterspec(config):
-    tf_config = json.loads(os.environ['TF_CONFIG'])
+    tf_config = get_tf_config()
+    if not tf_config:
+        return
     assert config.num_ps_replicas == len(tf_config['cluster']['ps'])
     assert config.num_worker_replicas == len(tf_config['cluster']['worker']) + len(tf_config['cluster']['master'])
     assert config.cluster_spec == server_lib.ClusterSpec(tf_config['cluster'])
 
 
-def get_paperspace_tf_config(args, tf_config=os.environ.get('TF_CONFIG')):
-
+def get_paperspace_tf_config(args):
+    tf_config = get_tf_config()
     if not tf_config:
         return
-
     paperspace_tf_config = json.loads(base64.urlsafe_b64decode(tf_config).decode('utf-8'))
 
     if paperspace_tf_config['task']['type'] == 'worker':
