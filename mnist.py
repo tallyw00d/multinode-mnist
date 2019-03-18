@@ -110,18 +110,13 @@ def parse_args():
 
     # print storage options:
     files = os.listdir(os.environ.get('PS_JOBSPACE'))
-    tf.logging.info('DATA DIR')
+    tf.logging.info('DATA in PS_JOBSPACE')
     for name in files:
         tf.logging.info(name)
 
     # print storage options:
-    files = os.listdir(opts.data_dir)
-    tf.logging.info('DATA DIR')
-    for name in files:
-        tf.logging.info(name)
-
-    files = os.listdir(opts.log_dir)
-    tf.logging.info('LOG DIR')
+    files = os.listdir(os.environ.get('PS_HOME'))
+    tf.logging.info('DATA in PS_HOME')
     for name in files:
         tf.logging.info(name)
 
