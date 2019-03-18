@@ -102,20 +102,28 @@ def parse_args():
         opts.ps_hosts = []
 
     log_type_path = opts.log_dir + '/' + os.environ.get('TYPE')
+    Path('/storage/{}'.format(os.environ.get('TYPE'))).touch(exist_ok=True)
     try:
         Path(log_type_path).touch(exist_ok=True)
-        # print storage options:
-        files = os.listdir(opts.data_dir)
-        tf.logging.info('DATA DIR')
-        for name in files:
-            tf.logging.info(name)
-
-        files = os.listdir(opts.log_dir)
-        tf.logging.info('LOG DIR')
-        for name in files:
-            tf.logging.info(name)
     except FileNotFoundError as e:
         tf.logging.warning(str(e))
+
+    # print storage options:
+    files = os.listdir(os.environ.get('PS_JOBSPACE'))
+    tf.logging.info('DATA DIR')
+    for name in files:
+        tf.logging.info(name)
+
+    # print storage options:
+    files = os.listdir(opts.data_dir)
+    tf.logging.info('DATA DIR')
+    for name in files:
+        tf.logging.info(name)
+
+    files = os.listdir(opts.log_dir)
+    tf.logging.info('LOG DIR')
+    for name in files:
+        tf.logging.info(name)
 
     return opts
 
