@@ -106,16 +106,16 @@ def parse_args():
         Path(log_type_path).touch(exist_ok=True)
         # print storage options:
         files = os.listdir(opts.data_dir)
-        print('DATA DIR')
+        tf.logging.info('DATA DIR')
         for name in files:
-            print(name)
+            tf.logging.info(name)
 
         files = os.listdir(opts.log_dir)
-        print('LOG DIR')
+        tf.logging.info('LOG DIR')
         for name in files:
-            print(name)
+            tf.logging.info(name)
     except FileNotFoundError as e:
-        print(str(e))
+        tf.logging.warning(str(e))
 
     return opts
 
