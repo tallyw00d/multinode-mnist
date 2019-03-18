@@ -82,8 +82,16 @@ def parse_args():
 
     # Parse args
     opts = parser.parse_args()
-    opts.data_dir = os.path.abspath(os.environ.get('PS_HOME', os.getcwd()) + '/data')
-    opts.log_dir = os.path.abspath(os.environ.get('PS_HOME', os.getcwd()) + '/logs')
+
+    tf.logging.set_verbosity(opts.verbosity)
+
+    opts.data_dir = os.path.abspath(os.environ.get('PS_JOBSPACE', os.getcwd()) + '/data')
+    opts.log_dir = os.path.abspath(os.environ.get('PS_JOBSPACE', os.getcwd()) + '/logs')
+
+    if not os.path.exists(opts.data_dir):
+        os.mkdir(opts.data_dir)
+    if not os.path.exists(opts.log_dir):
+        os.mkdir(opts.log_dir)
 
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
@@ -102,7 +110,6 @@ def parse_args():
         opts.ps_hosts = []
 
     log_type_path = opts.log_dir + '/' + os.environ.get('TYPE')
-    Path('/storage/{}'.format(os.environ.get('TYPE'))).touch(exist_ok=True)
     try:
         Path(log_type_path).touch(exist_ok=True)
     except FileNotFoundError as e:
@@ -284,7 +291,6 @@ def main(opts):
 
 if __name__ == "__main__":
     args = parse_args()
-    tf.logging.set_verbosity(args.verbosity)
 
     tf.logging.debug('=' * 20 + ' Environment Variables ' + '=' * 20)
     for k, v in os.environ.items():
