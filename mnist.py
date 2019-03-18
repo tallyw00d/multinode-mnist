@@ -112,7 +112,7 @@ def parse_args():
 
 
 def get_tf_config():
-    tf_config = json.loads(os.getenv('TF_CONFIG', "{}"))
+    tf_config = json.loads(os.environ.get('TF_CONFIG'))
     if not tf_config:
         return
     return tf_config
@@ -177,7 +177,7 @@ def check_clusterspec(config):
 
 
 def get_paperspace_tf_config(args):
-    tf_config = get_tf_config()
+    tf_config = os.environ.get('TF_CONFIG')
     if not tf_config:
         return
     paperspace_tf_config = json.loads(base64.urlsafe_b64decode(tf_config).decode('utf-8'))
