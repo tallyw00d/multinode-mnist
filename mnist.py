@@ -3,7 +3,6 @@
 # Author: Michal Kulaczkowski
 
 from __future__ import print_function
-from pathlib import Path
 import base64
 import json
 import os
@@ -12,7 +11,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import tensorflow as tf
 from tensorflow.python.training import server_lib
 
-from utils import train_dataset, test_dataset
+from utils import train_dataset, test_dataset, ping
 
 
 def parse_args():
@@ -95,28 +94,10 @@ def parse_args():
 
     opts.hidden_units = [int(n) for n in opts.hidden_units.split(',')]
 
-    if opts.worker_hosts:
-        opts.worker_hosts = opts.worker_hosts.replace('[', '').replace(']', '').split(',')
-    else:
-        opts.worker_hosts = []
-
-    if opts.master:
-        opts.master = opts.master.replace('[', '').replace(']', '').split(',')
-        opts.worker_hosts.append(opts.master)
-
-    if opts.ps_hosts:
-        opts.ps_hosts = opts.ps_hosts.replace('[', '').replace(']', '').split(',')
-    else:
-        opts.ps_hosts = []
-
-    log_type_path = opts.log_dir + '/' + os.environ.get('TYPE')
-    try:
-        Path(log_type_path).touch(exist_ok=True)
-    except FileNotFoundError as e:
-        tf.logging.warning(str(e))
-
+    tf.logging.info('************STORAGE CHECK*******************')
     # print storage options:
     files = os.listdir(os.environ.get('PS_JOBSPACE'))
+
     tf.logging.info('DATA in PS_JOBSPACE')
     for name in files:
         tf.logging.info(name)
@@ -130,23 +111,25 @@ def parse_args():
     return opts
 
 
-def check_tf_config_for_distributed(opts):
-    if all([opts.job_name is None, not opts.ps_hosts, not opts.worker_hosts]):
-        return False
-    elif any([opts.job_name is None, not opts.ps_hosts, not opts.worker_hosts]):
-        tf.logging.warn('Distributed setting is incomplete. You must pass job_name, ps_hosts, and worker_hosts.')
-        if opts.job_name is None:
-            tf.logging.warn('Expected job_name of worker or ps. Received {}.'.format(opts.job_name))
-        if not opts.ps_hosts:
-            tf.logging.warn('Expected ps_hosts, list of hostname:port pairs. Got {}. '.format(opts.ps_hosts) +
-                            'Example: --ps_hosts "localhost:2224" or --ps_hosts "localhost:2224,localhost:2225')
-        if not opts.worker_hosts:
-            tf.logging.warn('Expected worker_hosts, list of hostname:port pairs. Got {}. '.format(opts.worker_hosts) +
-                            'Example: --worker_hosts "localhost:2222,localhost:2223"')
-        tf.logging.warn('Ignoring distributed arguments. Running single mode.')
-        return False
-    return True
+def network_check():
+    tf_config = json.loads(os.environ['TF_CONFIG'])
+    tf.logging.info('************NETWORK CHECK*******************')
 
+    for ip in tf_config['cluster']['worker']:
+        if ping(str(ip)):
+            tf.logging.info('PINGING: {} - OK'.format(ip))
+        else:
+            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
+    for ip in tf_config['cluster']['ps']:
+        if ping(str(ip)):
+            tf.logging.info('PINGING: {} - OK'.format(ip))
+        else:
+            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
+    for ip in tf_config['cluster']['master']:
+        if ping(str(ip)):
+            tf.logging.info('PINGING: {} - OK'.format(ip))
+        else:
+            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
 
 def check_ps_nodes(config):
     tf_config = json.loads(os.environ['TF_CONFIG'])
@@ -305,5 +288,6 @@ if __name__ == "__main__":
     if tf_config:
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
+    network_check()
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     main(args)
