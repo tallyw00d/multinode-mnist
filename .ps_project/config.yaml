@@ -1,0 +1,13 @@
+version: 0
+
+type: "multi-grpc"
+worker:
+  container: "tensorflow/tensorflow:1.13.1-gpu-py3"
+  command: "python mnist.py"
+  machine-type: "P5000"
+  count: 2
+parameter-server:
+  container: "tensorflow/tensorflow:1.13.1-gpu-py3"
+  command: "python mnist.py"
+  machine-type: "P5000"
+  count: 1
