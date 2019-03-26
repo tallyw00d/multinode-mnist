@@ -37,7 +37,8 @@ def parse_args():
                         help='Comma-separated list of hostname:port pairs.')
     parser.add_argument('--master', type=str, default=os.environ.get('MASTER'),
                         help='Comma-separated list of hostname:port pairs.')
-
+    parser.add_argument('--max_steps', type=int, default=100000,
+                        help='Number of steps to run trainer.')
     # Experiment related parameters
     parser.add_argument('--local_data_root', type=str, default=os.path.abspath(os.getenv('PS_HOME', os.getcwd()) + '/data'),
                         help='Path to dataset. This path will be /data on Paperspace.')
@@ -118,28 +119,6 @@ def get_tf_config():
     return tf_config
 
 
-def network_check():
-    tf.logging.info('************NETWORK CHECK*******************')
-    tf_config = get_tf_config()
-    if not tf_config:
-        return
-
-    for ip in tf_config['cluster']['worker']:
-        if ping(str(ip)):
-            tf.logging.info('PINGING: {} - OK'.format(ip))
-        else:
-            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
-    for ip in tf_config['cluster']['ps']:
-        if ping(str(ip)):
-            tf.logging.info('PINGING: {} - OK'.format(ip))
-        else:
-            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
-    for ip in tf_config['cluster']['master']:
-        if ping(str(ip)):
-            tf.logging.info('PINGING: {} - OK'.format(ip))
-        else:
-            tf.logging.warning('PINGING: {} - FAILED'.format(ip))
-
 def check_ps_nodes(config):
     tf_config = get_tf_config()
     if not tf_config:
@@ -181,15 +160,7 @@ def get_paperspace_tf_config(args):
     if not tf_config:
         return
     paperspace_tf_config = json.loads(base64.urlsafe_b64decode(tf_config).decode('utf-8'))
-
-    if paperspace_tf_config['task']['type'] == 'worker':
-        paperspace_tf_config['task']['index'] = paperspace_tf_config['task']['index'] - 1
-    master_nodes = paperspace_tf_config['cluster']['master']
-    workers = paperspace_tf_config['cluster']['worker']
-
-    paperspace_tf_config['cluster']['worker'] = [x for x in workers if x not in master_nodes]
-    if paperspace_tf_config['environment'] == 'paperspace':
-        paperspace_tf_config['environment'] = 'cloud'
+    
     tf.logging.debug(str(paperspace_tf_config))
     return paperspace_tf_config
 
@@ -251,11 +222,15 @@ def get_model_fn(opts):
 def main(opts):
     """Main"""
     # Create an estimator
+    # distribution = tf.contrib.distribute.CollectiveAllReduceStrategy(
+    #     num_gpus_per_worker=1)
+
     config = tf.estimator.RunConfig(
         model_dir=opts.log_dir,
         save_summary_steps=opts.save_summary_steps,
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
+        # train_distribute=distribution,
         log_step_count_steps=opts.log_step_count_steps)
 
     # CHECK CONFIG
@@ -278,7 +253,7 @@ def main(opts):
     eval_input_fn = get_input_fn(opts, is_train=False)
 
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn,
-                                        max_steps=1e6)
+                                        max_steps=opts.max_steps)
     eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn,
                                       steps=None,
                                       start_delay_secs=0,
@@ -304,6 +279,5 @@ if __name__ == "__main__":
     if tf_config:
         os.environ['TF_CONFIG'] = json.dumps(tf_config)
 
-    network_check()
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     main(args)
