@@ -6,7 +6,7 @@ To run this project you need:
 
 - [Python](https://python.org/) 3.5+
 - [Git](https://git-scm.com/)
-- TensorFlow 1.8+ (to run locally). Get it with `pip install tensorflow`
+- TensorFlow 1.13+ (to run locally). Get it with `pip install tensorflow`
 
 ### Setting Up
 
