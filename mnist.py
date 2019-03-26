@@ -37,7 +37,7 @@ def parse_args():
                         help='Comma-separated list of hostname:port pairs.')
     parser.add_argument('--master', type=str, default=os.environ.get('MASTER'),
                         help='Comma-separated list of hostname:port pairs.')
-    parser.add_argument('--max_steps', type=int, default=100000,
+    parser.add_argument('--max_steps', type=int, default=25000,
                         help='Number of steps to run trainer.')
     # Experiment related parameters
     parser.add_argument('--local_data_root', type=str, default=os.path.abspath(os.getenv('PS_HOME', os.getcwd()) + '/data'),
