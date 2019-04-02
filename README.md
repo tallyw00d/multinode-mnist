@@ -1,4 +1,5 @@
 # MNIST Distributed Example
+# Tallywood Mod71
 
 ## Install
 
