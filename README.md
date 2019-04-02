@@ -1,4 +1,5 @@
 # MNIST Distributed Example
+# Mod Tw00d 71
 
 ## Install
 
