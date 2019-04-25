@@ -1,4 +1,5 @@
 # MNIST Distributed Example
+#CI 
 
 ## Install
 
